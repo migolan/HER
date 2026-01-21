@@ -7,7 +7,7 @@ This project implements Hindsight Experience Replay (HER), demonstrated on the B
 - [Usage](#usage)
   - [Running Experiments](#running-experiments)
   - [Training a Single Model](#training-a-single-model)
-  - [Comparing Results](#comparing-results)
+  - [Comparing Runs](#comparing-runs)
 - [Project Structure](#project-structure)
 
 ## Setup
@@ -20,10 +20,10 @@ pip install torch numpy tqdm matplotlib
 ## Usage
 
 ### Running Experiments
-The `run_experiments.py` script executes a batch of experiments defined in a JSON config file located in the `experiments/` directory.
+The `run_experiment.py` script executes a batch of runs defined in a JSON config file located in the `experiments/` directory.
 
 ```bash
-python scripts/run_experiments.py --experiment-name experiment_name
+python scripts/run_experiment.py --experiment-name experiment_name
 ```
 
 **Arguments:**
@@ -43,8 +43,8 @@ python scripts/_train.py --N 5 --p-her 0.8 --n-epochs 1000 --run-name name
 - `--run-name`: Run name which will be used to save the results.
 - Run `python scripts/_train.py --help` for a full list of parameters.
 
-### Comparing Results
-If you have multiple results files in JSON format, you can compare them manually using `_plot_experiment.py`:
+### Comparing Runs
+If you have multiple runs files in JSON format, you can compare them manually using `_plot_experiment.py`:
 
 ```bash
 python scripts/_plot_experiment.py --run-names run_name1 run_name2 --experiment-name experiment_name
