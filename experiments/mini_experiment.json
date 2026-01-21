@@ -1,0 +1,16 @@
+[
+    {
+        "--run-name": "N_5_binary_reward_2",
+        "--N": 5,
+        "--reward-method": "BINARY_REWARD",
+        "--p-her": 0.0,
+        "--epochs": 2
+    },
+    {
+        "--run-name": "N_5_shaped_reward_2",
+        "--N": 5,
+        "--reward-method": "SHAPED_REWARD",
+        "--p-her": 0.0,
+        "--epochs": 2
+    }
+]

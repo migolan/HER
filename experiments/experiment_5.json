@@ -1,0 +1,20 @@
+[
+    {
+        "--run-name": "N_5_binary_reward",
+        "--N": 5,
+        "--reward-method": "BINARY_REWARD",
+        "--p-her": 0.0
+    },
+    {
+        "--run-name": "N_5_shaped_reward",
+        "--N": 5,
+        "--reward-method": "SHAPED_REWARD",
+        "--p-her": 0.0
+    },
+    {
+        "--run-name": "N_5_binary_reward_HER",
+        "--N": 5,
+        "--reward-method": "BINARY_REWARD",
+        "--p-her": 0.5
+    }
+]

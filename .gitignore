@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+outputs/*.json
+outputs/*.pt
+.idea/
+.vscode/
+!README.md
+!scripts/*.py
+!src/*.py
