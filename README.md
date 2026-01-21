@@ -3,12 +3,20 @@
 This project implements Hindsight Experience Replay (HER)[https://arxiv.org/pdf/1707.01495], demonstrated on the Bit-Flipping Problem (BFP) with Deep Q-Learning (DQN).
 
 ## Table of Contents
+- [Results](#results)
 - [Setup](#setup)
 - [Usage](#usage)
   - [Running Experiments](#running-experiments)
   - [Training a Single Model](#training-a-single-model)
   - [Comparing Runs](#comparing-runs)
 - [Project Structure](#project-structure)
+
+## Results
+### N=5
+![](outputs/experiment_5.png)
+
+### N=10
+![](outputs/experiment_10.png)
 
 ## Setup
 
