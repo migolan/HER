@@ -17,38 +17,27 @@ import os
 # Add the project root to sys.path to allow importing from src
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from src.bfp_dqn import BFP_DQN
-from src.bfp_env import BFP_ENV, BFPRewardMethod
+from src.bfp_dqn import BFP_DQN, ModelConfig
+from src.bfp_env import BFP_ENV, BFPRewardMethod, BFPEnvConfig
 from src.her import ExperienceReplay, collect_by_policy
+
 
 @dataclass
 class TrainConfig:
     # Required arguments
-    N: int
     p_her: float
     run_name: str
     
     # Optional arguments with defaults
-    reward_method: str = "BINARY_REWARD"
-    hidden_dim: int = 128
     epsilon_high: float = 0.9
     epsilon_low: float = 0.05
     epsilon_decay: float = 200.0
     episodes_per_epoch: int = 1
-    episode_length_factor: int = 1
     gamma: float = 0.99
     epochs: int = 5000
     lr: float = 5e-4
     q_target_update_rate: int = 1000
     batch_size: int = 64
-    use_bias: bool = True
-
-    def to_dict(self):
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
 SEED = 42
 np.random.seed(SEED)
@@ -114,34 +103,14 @@ def training_loop(
     return epoch_metrics
 
 
-def save_output(config: TrainConfig, metrics, q_network):
-    model_filepath = os.path.join('outputs', config.run_name + '.pt')
-    torch.save(q_network.state_dict(), model_filepath)
-
-    output_data = {
-        "args": config.to_dict(),
-        "metrics": metrics,
-    }
-    results_filepath = os.path.join('outputs', config.run_name + '.json')
-    with open(results_filepath, "w") as f:
-        json.dump(output_data, f, indent=4)
-
-
-def train(config: TrainConfig):
-    # env
-    reward_method = getattr(BFPRewardMethod, config.reward_method)
-    env = BFP_ENV(config.N, reward_method, config.episode_length_factor)
-    
-    # model
-    q_network = BFP_DQN(config.N, config.hidden_dim, use_bias=config.use_bias)
-
+def train_dqn(train_config: TrainConfig, env, q_network):
     # behavior collector
-    epsilon_model = partial(decaying_epsilon, epsilon_high=config.epsilon_high, epsilon_low=config.epsilon_low, epsilon_decay=config.epsilon_decay)
+    epsilon_model = partial(decaying_epsilon, epsilon_high=train_config.epsilon_high, epsilon_low=train_config.epsilon_low, epsilon_decay=train_config.epsilon_decay)
     behavior_policy = partial(epsilon_greedy_policy, q_network=q_network, epsilon_model=epsilon_model)
-    experience_replay = ExperienceReplay(env, behavior_policy, config.episodes_per_epoch)
+    experience_replay = ExperienceReplay(env, behavior_policy, train_config.episodes_per_epoch)
 
     # optimizer
-    optimizer = torch.optim.Adam(q_network.parameters(), lr=config.lr)
+    optimizer = torch.optim.Adam(q_network.parameters(), lr=train_config.lr)
 
     # evaluator
     policy = partial(epsilon_greedy_policy, q_network=q_network, epsilon_model=lambda epoch: 0, epoch=0)
@@ -152,16 +121,10 @@ def train(config: TrainConfig):
         optimizer,
         q_network,
         evaluator,
-        config.epochs,
-        config.batch_size,
-        config.p_her,
-        config.q_target_update_rate,
-        config.gamma
+        train_config.epochs,
+        train_config.batch_size,
+        train_config.p_her,
+        train_config.q_target_update_rate,
+        train_config.gamma
     )
-
-    save_output(config, metrics, q_network)
-
-
-if __name__ == "__main__":
-    config = simple_parsing.parse(TrainConfig)
-    train(config)
+    return metrics

@@ -18,7 +18,7 @@ def subprocess_wrapper(cmd):
 
 
 def run_run(**kwargs):
-    cmd = ["python", "scripts/_train.py"]
+    cmd = ["python", "src/bfp_dqn.py"]
     for k, v in kwargs.items():
         cmd.extend([k, str(v)])
         if k == "--run-name":

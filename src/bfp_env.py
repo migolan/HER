@@ -25,7 +25,13 @@ class BFPStateInfo:
     done: bool
     dist: float
 
-class BFP_ENV:
+@dataclass
+class BFPEnvConfig:
+    N: int
+    reward_method: str = "BINARY_REWARD"
+    episode_length_factor: int = 1
+
+class BFPEnv:
     def __init__(self, N, reward_method, episode_length_factor):
         self._N = N
         self.reward_method = reward_method

@@ -1,5 +1,8 @@
 import torch
 import torch.nn.functional as F
+from dataclasses import dataclass
+from src.bfp_env import BFPEnvConfig, BFPEnv, BFPRewardMethod
+from src.train_dqn import TrainConfig, train_dqn
 
 
 class SimpleDQN(torch.nn.Module):
@@ -18,6 +21,12 @@ class SimpleDQN(torch.nn.Module):
         return x
 
 
+@dataclass
+class BFP_DQN_ModelConfig:
+    hidden_dim: int = 128
+    use_bias: bool = True
+
+
 class BFP_DQN(SimpleDQN):
     def __init__(self, state_dim, hidden_dim, use_bias=True):
         super(BFP_DQN, self).__init__(state_dim*2, hidden_dim, state_dim, use_bias=use_bias)
@@ -26,3 +35,46 @@ class BFP_DQN(SimpleDQN):
         x = [s.augstate().float() for s in x]
         x = torch.stack(x)
         return super(BFP_DQN, self).forward(x)
+
+
+def get_env_and_model(env_config: BFPEnvConfig, model_config: BFP_DQN_ModelConfig):
+    # env
+    reward_method = getattr(BFPRewardMethod, env_config.reward_method)
+    env = BFPEnv(env_config.N, reward_method, env_config.episode_length_factor)
+    
+    # model
+    q_network = BFP_DQN(env_config.N, model_config.hidden_dim, use_bias=model_config.use_bias)
+    return env, q_network
+
+
+def save_output(env_config: BFPEnvConfig, model_config: ModelConfig, train_config: TrainConfig, metrics, q_network):
+    model_filepath = os.path.join('outputs', train_config.run_name + '.pt')
+    torch.save(q_network.state_dict(), model_filepath)
+
+    output_data = {
+        "args": {
+            "env": asdict(env_config),
+            "model": asdict(model_config),
+            "train": asdict(train_config)
+        },
+        "metrics": metrics,
+    }
+    results_filepath = os.path.join('outputs', train_config.run_name + '.json')
+    with open(results_filepath, "w") as f:
+        json.dump(output_data, f, indent=4)
+
+
+def _parse_args():
+    parser = simple_parsing.ArgumentParser()
+    parser.add_arguments(BFPEnvConfig, dest="env")
+    parser.add_arguments(BFP_DQN_ModelConfig, dest="model")
+    parser.add_arguments(TrainConfig, dest="train")
+    args = parser.parse_args()
+    return args.env, args.model, args.train
+
+
+if __name__ == "__main__":
+    env_config, model_config, train_config = _parse_args()
+    env, q_network = get_env_and_model(env_config, model_config)
+    metrics = train_dqn(train_config, env, q_network)
+    save_output(env_config, model_config, train_config, metrics, q_network)
