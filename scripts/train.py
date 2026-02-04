@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm
 import argparse
 import json
+import simple_parsing
 
 import sys
 import os
@@ -18,6 +19,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.bfp_dqn import BFP_DQN
 from src.bfp_env import BFP_ENV, BFPRewardMethod
 from src.her import ExperienceReplay, collect_by_policy
+from src.config import TrainConfig
 
 SEED = 42
 np.random.seed(SEED)
@@ -83,54 +85,37 @@ def training_loop(
     return epoch_metrics
 
 
-def save_output(args, metrics, q_network):
-    model_filepath = os.path.join('outputs', args.run_name + '.pt')
+def save_output(config: TrainConfig, metrics, q_network):
+    model_filepath = os.path.join('outputs', config.run_name + '.pt')
     torch.save(q_network.state_dict(), model_filepath)
 
     output_data = {
-        "args": vars(args),
+        "args": config.to_dict(),
         "metrics": metrics,
     }
-    results_filepath = os.path.join('outputs', args.run_name + '.json')
+    results_filepath = os.path.join('outputs', config.run_name + '.json')
     with open(results_filepath, "w") as f:
         json.dump(output_data, f, indent=4)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Train BFP DQN")
-    parser.add_argument("--N", type=int, required=True, help="Environment size")
-    parser.add_argument("--reward-method", type=str, default="BINARY_REWARD", choices=["BINARY_REWARD", "SHAPED_REWARD"], help="Reward method")
-    parser.add_argument("--hidden-dim", type=int, default=128, help="Hidden dimension of DQN")
-    parser.add_argument("--epsilon-high", type=float, default=0.9, help="Initial epsilon")
-    parser.add_argument("--epsilon-low", type=float, default=0.05, help="Final epsilon")
-    parser.add_argument("--epsilon-decay", type=float, default=200, help="Epsilon decay rate")
-    parser.add_argument("--episodes-per-epoch", type=int, default=1, help="Episodes per epoch")
-    parser.add_argument("--episode-length-factor", type=int, default=1, help="Factor to multiply N to get episode length")
-    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
-    parser.add_argument("--epochs", type=int, default=5000, help="Number of epochs")
-    parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
-    parser.add_argument("--q-target-update-rate", type=int, default=1000, help="Target network update rate")
-    parser.add_argument("--p-her", type=float, required=True, help="HER probability")
-    parser.add_argument("--batch-size", type=int, default=64, help="Batch size")
-    parser.add_argument("--run-name", type=str, required=True, help="Run name")
-    return parser.parse_args()
+# Removed parse_args as fire will handle it
 
 
-def run_training(args):
+def run_training(config: TrainConfig):
     # env
-    reward_method = getattr(BFPRewardMethod, args.reward_method)
-    env = BFP_ENV(args.N, reward_method, args.episode_length_factor)
+    reward_method = getattr(BFPRewardMethod, config.reward_method)
+    env = BFP_ENV(config.N, reward_method, config.episode_length_factor)
     
     # model
-    q_network = BFP_DQN(args.N, args.hidden_dim)
+    q_network = BFP_DQN(config.N, config.hidden_dim, use_bias=config.use_bias)
 
     # behavior collector
-    epsilon_model = partial(decaying_epsilon, epsilon_high=args.epsilon_high, epsilon_low=args.epsilon_low, epsilon_decay=args.epsilon_decay)
+    epsilon_model = partial(decaying_epsilon, epsilon_high=config.epsilon_high, epsilon_low=config.epsilon_low, epsilon_decay=config.epsilon_decay)
     behavior_policy = partial(epsilon_greedy_policy, q_network=q_network, epsilon_model=epsilon_model)
-    experience_replay = ExperienceReplay(env, behavior_policy, args.episodes_per_epoch)
+    experience_replay = ExperienceReplay(env, behavior_policy, config.episodes_per_epoch)
 
     # optimizer
-    optimizer = torch.optim.Adam(q_network.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(q_network.parameters(), lr=config.lr)
 
     # evaluator
     policy = partial(epsilon_greedy_policy, q_network=q_network, epsilon_model=lambda epoch: 0, epoch=0)
@@ -141,16 +126,16 @@ def run_training(args):
         optimizer,
         q_network,
         evaluator,
-        args.epochs,
-        args.batch_size,
-        args.p_her,
-        args.q_target_update_rate,
-        args.gamma
+        config.epochs,
+        config.batch_size,
+        config.p_her,
+        config.q_target_update_rate,
+        config.gamma
     )
 
-    save_output(args, metrics, q_network)
+    save_output(config, metrics, q_network)
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    run_training(args)
+    config = simple_parsing.parse(TrainConfig)
+    run_training(config)
