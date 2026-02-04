@@ -21,7 +21,7 @@ def smooth(values, window=50):
         smoothed.append(sum(chunk) / window)
     return smoothed
 
-def plot_experiment(experiment_name, run_names):
+def plot_experiment(experiment_name=None, run_names=None):
     if not run_names and experiment_name:
         print(f"No run names provided. Loading from experiments/{experiment_name}.json...")
         experiment_filepath = os.path.join("experiments", experiment_name + ".json")
@@ -97,10 +97,13 @@ def plot_experiment(experiment_name, run_names):
         print(f"Plot saved to {experiment_plot_filepath}")
     plt.show()
 
-if __name__ == "__main__":
+def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-names", nargs="+", help="Experiment run names")
     parser.add_argument("--experiment-name", type=str, default=None, help="Experiment name")
     args = parser.parse_args()
-    
-    plot_experiment(args.experiment_name, args.run_names)
+    return args.experiment_name, args.run_names
+
+if __name__ == "__main__":
+    experiment_name, run_names = _parse_args()
+    plot_experiment(experiment_name, run_names)

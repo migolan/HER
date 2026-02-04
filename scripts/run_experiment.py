@@ -18,7 +18,7 @@ def subprocess_wrapper(cmd):
 
 
 def run_run(**kwargs):
-    cmd = ["python", "scripts/train.py"]
+    cmd = ["python", "scripts/_train.py"]
     for k, v in kwargs.items():
         cmd.extend([k, str(v)])
         if k == "--run-name":
@@ -27,15 +27,14 @@ def run_run(**kwargs):
     subprocess_wrapper(cmd)
     return run_name
 
-def main():
-    parser = argparse.ArgumentParser(description="Run experiment of multiple runs from an experiment run configs JSON file")
-    parser.add_argument("--experiment-name", type=str, default="mini_experiment", help="Experiment name")
-    args = parser.parse_args()
-
-    # Load experiment run configs
-    experiment_filepath = os.path.join('experiments', args.experiment_name + '.json')
+def load_experiment_run_configs(experiment_name):
+    experiment_filepath = os.path.join('experiments', experiment_name + '.json')
     with open(experiment_filepath, 'r') as f:
         experiment_run_configs = json.load(f)
+    return experiment_run_configs
+
+def run_experiment(experiment_name):
+    experiment_run_configs = load_experiment_run_configs(experiment_name)
 
     # Run experiment runs
     for run_config in tqdm(experiment_run_configs):
@@ -43,8 +42,15 @@ def main():
     print("All experiment runs finished.")
 
     # Generate runs comparison plots
-    cmd_plot = ["python", "scripts/plot_experiment.py", "--experiment-name", args.experiment_name]
+    cmd_plot = ["python", "scripts/_plot_experiment.py", "--experiment-name", experiment_name]
     subprocess_wrapper(cmd_plot)
 
+def _parse_args():
+    parser = argparse.ArgumentParser(description="Run experiment of multiple runs from an experiment run configs JSON file")
+    parser.add_argument("--experiment-name", type=str, default="mini_experiment", help="Experiment name")
+    args = parser.parse_args()
+    return args.experiment_name
+
 if __name__ == "__main__":
-    main()
+    experiment_name = _parse_args()
+    run_experiment(experiment_name)

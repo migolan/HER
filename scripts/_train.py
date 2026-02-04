@@ -98,10 +98,7 @@ def save_output(config: TrainConfig, metrics, q_network):
         json.dump(output_data, f, indent=4)
 
 
-# Removed parse_args as fire will handle it
-
-
-def run_training(config: TrainConfig):
+def train(config: TrainConfig):
     # env
     reward_method = getattr(BFPRewardMethod, config.reward_method)
     env = BFP_ENV(config.N, reward_method, config.episode_length_factor)
@@ -138,4 +135,4 @@ def run_training(config: TrainConfig):
 
 if __name__ == "__main__":
     config = simple_parsing.parse(TrainConfig)
-    run_training(config)
+    train(config)
