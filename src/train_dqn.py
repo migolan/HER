@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
 from dataclasses import dataclass
@@ -91,7 +92,7 @@ def training_loop(
         experience_replay: ExperienceReplay,
         optimizer: torch.optim.Optimizer,
         q_network: torch.nn.Module,
-        evaluator: callable,
+        evaluator: Callable,
         epochs: int,
         batch_size: int,
         p_her: float,
