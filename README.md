@@ -1,6 +1,6 @@
 # HER BFP DQN Experimentation Framework
 
-This project implements Hindsight Experience Replay (HER)[https://arxiv.org/pdf/1707.01495], demonstrated on the Bit-Flipping Problem (BFP) with Deep Q-Learning (DQN).
+This project implements [Hindsight Experience Replay (HER)](https://arxiv.org/pdf/1707.01495), demonstrated on the Bit-Flipping Problem (BFP) with Deep Q-Learning (DQN).
 
 ## Table of Contents
 - [Results](#results)
@@ -17,6 +17,10 @@ This project implements Hindsight Experience Replay (HER)[https://arxiv.org/pdf/
 
 ### N=10, with 2-layer DQN and hidden dimension of 128
 ![](outputs/experiment_10.png)
+
+## Reconstructing optimal policy
+See [this notebook](scripts/evaluate_optimal_compatible_policy.ipynb) for an experiment attempting to reconstruct the optimal policy.
+![](outputs/optimal_5.png)
 
 ## Setup
 
