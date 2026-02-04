@@ -65,8 +65,8 @@ her/
 ├── README.md                # Project description and setup instructions
 ├── scripts/
 │   ├── run_experiment.py    # Orchestrates multiple training runs
-│   ├── train.py            # Training script for a single model
-│   └── plot_experiment.py  # Utility for comparing and plotting results
+│   ├── _train.py            # Training script for a single model
+│   └── _plot_experiment.py  # Utility for comparing and plotting results
 ├── src/
 │   ├── bfp_dqn.py           # DQN model architecture
 │   ├── bfp_env.py           # Bit-Flipping Problem environment logic
