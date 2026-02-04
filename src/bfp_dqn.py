@@ -1,8 +1,12 @@
+import json
+import os
+
+import simple_parsing
 import torch
 import torch.nn.functional as F
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from src.bfp_env import BFPEnvConfig, BFPEnv, BFPRewardMethod
-from src.train_dqn import TrainConfig, train_dqn
+from src.train_dqn import DQNTrainConfig, train_dqn
 
 
 class SimpleDQN(torch.nn.Module):
@@ -37,7 +41,10 @@ class BFP_DQN(SimpleDQN):
         return super(BFP_DQN, self).forward(x)
 
 
-def get_env_and_model(env_config: BFPEnvConfig, model_config: BFP_DQN_ModelConfig):
+def get_env_and_model(
+        env_config: BFPEnvConfig,
+        model_config: BFP_DQN_ModelConfig
+    ):
     # env
     reward_method = getattr(BFPRewardMethod, env_config.reward_method)
     env = BFPEnv(env_config.N, reward_method, env_config.episode_length_factor)
@@ -47,7 +54,13 @@ def get_env_and_model(env_config: BFPEnvConfig, model_config: BFP_DQN_ModelConfi
     return env, q_network
 
 
-def save_output(env_config: BFPEnvConfig, model_config: ModelConfig, train_config: TrainConfig, metrics, q_network):
+def save_output(
+        env_config: BFPEnvConfig,
+        model_config: BFP_DQN_ModelConfig,
+        train_config: DQNTrainConfig,
+        metrics,
+        q_network
+    ):
     model_filepath = os.path.join('outputs', train_config.run_name + '.pt')
     torch.save(q_network.state_dict(), model_filepath)
 
@@ -68,7 +81,7 @@ def _parse_args():
     parser = simple_parsing.ArgumentParser()
     parser.add_arguments(BFPEnvConfig, dest="env")
     parser.add_arguments(BFP_DQN_ModelConfig, dest="model")
-    parser.add_arguments(TrainConfig, dest="train")
+    parser.add_arguments(DQNTrainConfig, dest="train")
     args = parser.parse_args()
     return args.env, args.model, args.train
 

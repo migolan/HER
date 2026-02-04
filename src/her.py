@@ -15,6 +15,7 @@ class Transition(Generic[State, Action, Reward]):
     action: Action
     reward: Reward
     next_state: State
+    done: bool
 
 def collect_by_policy(env, policy, episodes_per_epoch):
     epoch_episode_metrics = []
@@ -32,7 +33,7 @@ def generate_episode_transitions(env, policy):
     while not state_info.done:
         action = policy(state=state)
         next_state, reward, state_info = env.step(action)
-        transitions.append(Transition(state, action, reward, next_state))
+        transitions.append(Transition(state, action, reward, next_state, state_info.done))
         state = next_state
 
     episode_metrics = env.episode_metrics(transitions)
@@ -71,6 +72,7 @@ class ExperienceReplay:
         for t in flipped_transitions:
             new_state = t.state.set_goal(t.next_state.state)
             new_next_state = t.next_state.set_goal(t.next_state.state)
-            new_reward = self.env._reward(new_state, t.action, new_next_state)
-            new_transitions.append(Transition(state=new_state, action=t.action, reward=new_reward, next_state=new_next_state))
+            new_reward = self.env.reward(new_state, t.action, new_next_state)
+            done = self.env.done(new_next_state)
+            new_transitions.append(Transition(state=new_state, action=t.action, reward=new_reward, next_state=new_next_state, done=done))
         return sampled_transitions + new_transitions

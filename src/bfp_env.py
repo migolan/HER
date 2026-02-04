@@ -59,6 +59,7 @@ class BFPEnv:
              state_info.done = True
 
         self._aug_state = next_aug_state
+
         return next_aug_state, reward, state_info
 
     @classmethod
@@ -81,39 +82,39 @@ class BFPEnv:
         return self.reward_method(next_aug_state)
 
     @classmethod
-    def _binary_reward(cls, next_aug_state):
-        if cls._done(next_aug_state):
+    def binary_reward(cls, next_aug_state):
+        if cls.done(next_aug_state):
             return 0
         else:
             return -1
 
     @staticmethod
-    def _shaped_reward(next_aug_state):
+    def shaped_reward(next_aug_state):
         return -((next_aug_state.state - next_aug_state.goal) ** 2).sum()
 
     @classmethod
     def _state_info(cls, aug_state: BFPAugState) -> BFPStateInfo:
         return BFPStateInfo(
-            done=cls._done(aug_state),
-            dist=cls._dist(aug_state)
+            done=cls.done(aug_state),
+            dist=cls.dist(aug_state)
         )
 
     @staticmethod
-    def _dist(aug_state: BFPAugState) -> float:
+    def dist(aug_state: BFPAugState) -> float:
         return len(aug_state.state)-sum(aug_state.state == aug_state.goal)
 
     @staticmethod
-    def _done(aug_state) -> bool:
+    def done(aug_state) -> bool:
         return all(aug_state.state == aug_state.goal)
 
     @staticmethod
     def episode_metrics(transitions):
         return {
             "total_return": sum([t.reward for t in transitions]),
-            "min_dist": min([BFP_ENV._dist(t.next_state) for t in transitions]),
-            "final_dist": BFP_ENV._dist(transitions[-1].next_state)
+            "min_dist": min([BFPEnv.dist(t.next_state) for t in transitions]),
+            "final_dist": BFPEnv.dist(transitions[-1].next_state)
         }
 
 class BFPRewardMethod(Enum):
-    BINARY_REWARD = BFP_ENV._binary_reward
-    SHAPED_REWARD = BFP_ENV._shaped_reward
+    BINARY_REWARD = BFPEnv.binary_reward
+    SHAPED_REWARD = BFPEnv.shaped_reward

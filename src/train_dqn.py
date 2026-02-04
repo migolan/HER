@@ -1,15 +1,12 @@
 from collections import defaultdict
 from copy import deepcopy
 from functools import partial
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
-import argparse
-import json
-import simple_parsing
 
 import sys
 import os
@@ -17,13 +14,11 @@ import os
 # Add the project root to sys.path to allow importing from src
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from src.bfp_dqn import BFP_DQN, ModelConfig
-from src.bfp_env import BFP_ENV, BFPRewardMethod, BFPEnvConfig
 from src.her import ExperienceReplay, collect_by_policy
 
 
 @dataclass
-class TrainConfig:
+class DQNTrainConfig:
     # Required arguments
     p_her: float
     run_name: str
@@ -44,10 +39,20 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 
-def decaying_epsilon(epsilon_high: float, epsilon_low: float, epsilon_decay: float, epoch: int) -> float:
+def decaying_epsilon(
+        epsilon_high: float,
+        epsilon_low: float,
+        epsilon_decay: float,
+        epoch: int
+) -> float:
     return epsilon_low + (epsilon_high - epsilon_low) * np.exp(-epoch / epsilon_decay)
 
-def epsilon_greedy_policy(epsilon_model, q_network: torch.nn.Module, state, epoch: int) -> int:
+def epsilon_greedy_policy(
+        epsilon_model,
+        q_network: torch.nn.Module,
+        state,
+        epoch: int
+) -> int:
     with torch.no_grad():
         Q = q_network([state])
     if np.random.rand() < epsilon_model(epoch=epoch):
@@ -55,7 +60,13 @@ def epsilon_greedy_policy(epsilon_model, q_network: torch.nn.Module, state, epoc
     else:
         return Q.argmax().item()
 
-def train_epoch(sampled_transitions, optimizer: torch.optim.Optimizer, q_network: torch.nn.Module, q_target_network: torch.nn.Module, gamma: float) -> float:
+def train_epoch(
+        sampled_transitions,
+        optimizer: torch.optim.Optimizer,
+        q_network: torch.nn.Module,
+        q_target_network: torch.nn.Module,
+        gamma: float
+) -> float:
     optimizer.zero_grad()
 
     states = [t.state for t in sampled_transitions]
@@ -64,7 +75,7 @@ def train_epoch(sampled_transitions, optimizer: torch.optim.Optimizer, q_network
     pred_q = pred_q[torch.arange(pred_q.size(0)), actions]
 
     rewards = torch.Tensor([t.reward for t in sampled_transitions])
-    dones = torch.Tensor([BFP_ENV._done(t.next_state) for t in sampled_transitions])
+    dones = torch.Tensor([t.next_state.done for t in sampled_transitions])
     next_states = [t.next_state for t in sampled_transitions]
     max_q = q_target_network(next_states).max(dim=1)[0]
     target_q = rewards + (1 - dones) * gamma * max_q
@@ -103,7 +114,7 @@ def training_loop(
     return epoch_metrics
 
 
-def train_dqn(train_config: TrainConfig, env, q_network):
+def train_dqn(train_config: DQNTrainConfig, env, q_network):
     # behavior collector
     epsilon_model = partial(decaying_epsilon, epsilon_high=train_config.epsilon_high, epsilon_low=train_config.epsilon_low, epsilon_decay=train_config.epsilon_decay)
     behavior_policy = partial(epsilon_greedy_policy, q_network=q_network, epsilon_model=epsilon_model)
